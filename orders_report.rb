@@ -1,21 +1,33 @@
 require 'ostruct'
 class OrdersReport
-  def initialize(orders, start_date, end_date)
+  def initialize(orders, date_range)
     @orders = orders
-    @start_date = start_date
-    @end_date = end_date
+    @date_range = date_range
   end
 
   def total_sales_within_date_range
-    orders_within_range = @orders.select do |order|
-      order.placed_at >= @start_date && order.placed_at <= @end_date
-    end
-
     orders_within_range.map(&:amount).inject(0) do |sum, amount|
       sum + amount
     end
   end
 end
 
+private
+
+def orders_within_range
+  @orders.select do |order|
+    order.placed_between?(@date_range)
+  end
+end
+
+class DateRange < Struct.new(:start_date, :end_date)
+  def include?(date)
+    (start_date..end_date).cover? date
+  end
+end
+
 class Order < OpenStruct
+  def placed_between?(date_range)
+    date_range.include?(placed_at)
+  end
 end
